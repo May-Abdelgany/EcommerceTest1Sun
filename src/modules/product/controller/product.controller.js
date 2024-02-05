@@ -191,14 +191,14 @@ export const allProducts = asyncHandler(
         //     ]
         // })
 
-        const apiFeature = new ApiFeatures(productModel.find(), req.query)
-            .paginate()
-            .filter()
-            .sort()
-            .search()
-            .fields()
-        const products = await apiFeature.mongooseQuery
-        return res.status(200).json({ message: "done", products })
+        // const apiFeature = new ApiFeatures(productModel.find(), req.query)
+        //     .paginate()
+        //     .filter()
+        //     .sort()
+        //     .search()
+        //     .fields()
+        // const products = await apiFeature.mongooseQuery
+        return res.status(200).json({ message: "done" })
     }
 )
 
