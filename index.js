@@ -6,7 +6,7 @@ import initApp from './src/index.router.js'
 import cors from 'cors'
 const app = express()
 // setup port and the baseUrl
-//app.use(cors())
+app.use(cors())
 
 var whitelist = ['http://example1.com', 'http://example2.com']
 // var corsOptions = {
@@ -26,20 +26,20 @@ var whitelist = ['http://example1.com', 'http://example2.com']
 
 
 
-if (process.env.MOOD == 'DEV') {
-    app.use(cors())
-} else {
-    app.use(async (req, res, next) => {
-        if (!whitelist.includes(req.header('origin'))) {
-            return next(new Error('Not allowed by CORS', { cause: 502 }))
-        }
-        await res.header('Access-Control-Allow-Origin', '*')
-        await res.header('Access-Control-Allow-Header', '*')
-        await res.header('Access-Control-Allow-Private-Network', 'true')
-        await res.header('Access-Control-Allow-Method', '*')
-        next()
-    })
-}
+// if (process.env.MOOD == 'DEV') {
+//     app.use(cors())
+// } else {
+//     app.use(async (req, res, next) => {
+//         if (!whitelist.includes(req.header('origin'))) {
+//             return next(new Error('Not allowed by CORS', { cause: 502 }))
+//         }
+//         await res.header('Access-Control-Allow-Origin', '*')
+//         await res.header('Access-Control-Allow-Header', '*')
+//         await res.header('Access-Control-Allow-Private-Network', 'true')
+//         await res.header('Access-Control-Allow-Method', '*')
+//         next()
+//     })
+// }
 
 
 
