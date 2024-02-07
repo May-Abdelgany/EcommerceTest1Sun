@@ -15,7 +15,13 @@ import { globalError } from './utils/errorHandling.js'
 
 const initApp = (app, express) => {
     //convert Buffer Data
-    app.use(express.json({}))
+    app.use((req, res, next) => {
+        if (req.originalUrl == '/order/weebhook') {
+            next()
+        } else {
+            express.json({})
+        }
+    })
     //Setup API Routing 
     app.use(`/auth`, authRouter)
     app.use(`/user`, userRouter)
