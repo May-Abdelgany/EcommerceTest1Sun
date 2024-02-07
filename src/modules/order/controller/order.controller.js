@@ -4,16 +4,14 @@ import productModel from "../../../../DB/model/Product.model.js";
 import couponModel from "../../../../DB/model/Coupon.model.js";
 
 import { asyncHandler } from "../../../utils/errorHandling.js";
+import payment from "../../../utils/payment.js";
+import Stripe from "stripe";
 //1-cart ,select products
 //2-loop for allProducts 
 export const createOrder = asyncHandler(
     async (req, res, next) => {
         let { products, couponName } = req.body
         const { _id } = req.user
-        const cart = await cartModel.findOne({ userId: _id })
-        if (!cart?.products?.length) {
-            return next(new Error('invalid card', { cause: 404 }))
-        }
         let coupon;
         if (couponName) {
             coupon = await couponModel.findOne({ name: couponName, usedBy: { $nin: _id } })
@@ -23,8 +21,13 @@ export const createOrder = asyncHandler(
             if (coupon.expireIn.getTime() < new Date().getTime()) {
                 return next(new Error('expired coupon', { cause: 400 }))
             }
+            req.body.couponId = coupon._id
         }
         if (!products?.length) {
+            const cart = await cartModel.findOne({ userId: _id })
+            if (!cart?.products?.length) {
+                return next(new Error('invalid cart', { cause: 404 }))
+            }
             products = cart.products.toObject()
         }
         const allProducts = []
@@ -58,10 +61,48 @@ export const createOrder = asyncHandler(
         }
         req.body.products = allProducts
         req.body.subPrice = subPrice
-        req.body.finalPrice = subPrice - (subPrice * coupon.amount || 0) / 100
+        req.body.finalPrice = subPrice - (subPrice * coupon?.amount || 0) / 100
         const order = await orderModel.create(req.body)
         if (couponName) {
             await couponModel.updateOne({ _id: coupon._id }, { $push: { usedBy: _id } })
+        }
+
+        if (order.paymentTypes == 'card') {
+            let createCoupon;
+            const stripe = new Stripe(process.env.SECRET_KEY)
+
+            if (couponName) {
+                createCoupon = await stripe.coupons.create({
+                    percent_off: coupon.amount,
+                    duration: 'once'
+                })
+            }
+
+            const session = await payment({
+                customer_email: req.user.email,
+                cancel_url: `${process.env.CANCEL_URL}?orderId=${order._id}`,
+                success_url: `${process.env.SUCCESS_URL}?orderId=${order._id}`,
+                payment_method_types: ['card'],
+                mode: 'payment',
+                metadata: {
+                    orderId: order._id.toString()
+                },
+                line_items: order.products.map((product) => {
+                    return {
+                        price_data: {
+                            currency: 'usd',
+                            product_data: {
+                                name: product.name
+                            },
+                            unit_amount: product.unitPrice * 100
+                        },
+                        quantity: product.quantity
+                    }
+
+                }),
+                discounts: createCoupon ? [{ coupon: createCoupon.id }] : []
+            })
+            return res.json({ message: "done", order, session })
         }
         return res.json({ message: "done", order })
     }

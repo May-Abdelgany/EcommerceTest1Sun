@@ -11,7 +11,7 @@ router
     .post('/',
         validation(brandValidation.tokenSchema, true),
         auth(brandEndPoints.create),
-        fileUpload(fileValidation.image).single('file'),
+        fileUpload(fileValidation.image).single('image'),
         validation(brandValidation.createBrandSchema),
         brandController.createBrand
     )
@@ -25,7 +25,7 @@ router
     .put('/:brandId',
         validation(brandValidation.tokenSchema, true),
         auth(brandEndPoints.update),
-        fileUpload(fileValidation.image).single('file'),
+        fileUpload(fileValidation.image).single('image'),
         validation(brandValidation.updateBrandSchema),
         brandController.updateBrand
     )
